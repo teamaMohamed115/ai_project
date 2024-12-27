@@ -378,19 +378,18 @@ class ConnectFourGUI:
         has_winner, winning_positions = self.game.check_winner(self.game.current_player)
         if has_winner:
             self.animate_winner(winning_positions)
-            winner = "You win!" if self.game.current_player == PLAYER_1 else "AI wins!"
-            messagebox.showinfo("Game Over", winner)
+            winner = "You win!" if self.game.current_player == PLAYER_1 else "AI wins!"  # Display winner
+            messagebox.showinfo("Game Over", winner)  # Show the winner's name
             self.disable_buttons()
             return True
 
         if self.game.is_draw():
             self.status_label.config(text="It's a draw!")
-            messagebox.showinfo("Game Over", "It's a draw!")
+            messagebox.showinfo("Game Over", "It's a draw!")  # Show draw message
             return True
 
         return False
 
-    # [Rest of the GUI methods remain the same as in your original code]
     def draw_board(self, highlight=[]):
         self.canvas.delete("all")
         for row in range(ROWS):
