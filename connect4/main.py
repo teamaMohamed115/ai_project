@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 import math
 import random
-
 # Constants (existing ones remain the same)
 ROWS = 6
 COLUMNS = 7
@@ -90,6 +89,21 @@ class ConnectFourGame:
 
         return score
 
+    def evaluate_window_simple(self, window, piece, opp_piece):
+        score = 0
+
+        if window.count(piece) == 4:
+            score += 100  # Winning move
+        elif window.count(piece) == 3 and window.count(" ") == 1:
+            score += 10  # Good potential move
+        elif window.count(piece) == 2 and window.count(" ") == 2:
+            score += 5  # Decent potential move
+
+        if window.count(opp_piece) == 3 and window.count(" ") == 1:
+            score -= 50  # Block opponent's winning move
+
+        return score
+
     def evaluate_position(self):
         score = 0
         piece = PLAYER_2  # AI piece
@@ -123,6 +137,43 @@ class ConnectFourGame:
                 # Negative diagonal
                 window = [self.board[row + 3 - i][col + i] for i in range(4)]
                 score += self.evaluate_window(window, piece)
+
+        return score
+
+    def evaluate_position_simple(self):
+        score = 0
+        piece = PLAYER_2
+        opp_piece = PLAYER_1
+
+        # Score center column
+        center_array = [self.board[row][COLUMNS // 2] for row in range(ROWS)]
+        center_count = center_array.count(piece)
+        score += center_count * 3
+
+        # Horizontal
+        for row in range(ROWS):
+            row_array = self.board[row]
+            for col in range(COLUMNS - 3):
+                window = row_array[col:col + 4]
+                score += self.evaluate_window_simple(window, piece, opp_piece)
+
+        # Vertical
+        for col in range(COLUMNS):
+            col_array = [self.board[row][col] for row in range(ROWS)]
+            for row in range(ROWS - 3):
+                window = col_array[row:row + 4]
+                score += self.evaluate_window_simple(window, piece, opp_piece)
+
+        # Diagonal
+        for row in range(ROWS - 3):
+            for col in range(COLUMNS - 3):
+                # Positive diagonal
+                window = [self.board[row + i][col + i] for i in range(4)]
+                score += self.evaluate_window_simple(window, piece, opp_piece)
+
+                # Negative diagonal
+                window = [self.board[row + 3 - i][col + i] for i in range(4)]
+                score += self.evaluate_window_simple(window, piece, opp_piece)
 
         return score
 
@@ -196,31 +247,29 @@ class ConnectFourGame:
 
     def get_easy_move(self):
         valid_moves = self.get_valid_moves()
+        scores = []
 
-        # 70% random move, 30% strategic move
-        if random.random() < 0.7:
-            return random.choice(valid_moves)
-
-        # Simple one-step lookahead
         for col in valid_moves:
-            # Check if AI can win
+            # Simulate dropping a piece in the column
             row = self.get_next_row(col)
             if row is not None:
                 self.board[row][col] = PLAYER_2
-                if self.check_winner(PLAYER_2)[0]:
-                    self.board[row][col] = " "
-                    return col
+                # Evaluate the board using a simplified heuristic
+                score = self.evaluate_position_simple()
+                # Undo the move
                 self.board[row][col] = " "
+                scores.append((col, score))
 
-            # Check if player can win
-            if row is not None:
-                self.board[row][col] = PLAYER_1
-                if self.check_winner(PLAYER_1)[0]:
-                    self.board[row][col] = " "
-                    return col
-                self.board[row][col] = " "
+        # Sort moves by score (best first)
+        scores.sort(key=lambda x: x[1], reverse=True)
 
-        return random.choice(valid_moves)
+        # Add randomness factor: Occasionally choose from lower-ranked options
+        if len(scores) > 1 and random.random() < 0.3:  # 30% chance to pick a less optimal move
+            move = random.choice(scores[1:])[0]
+        else:
+            move = scores[0][0]  # Choose the best move
+
+        return move
 
     def get_next_row(self, col):
         for row in range(ROWS - 1, -1, -1):
@@ -279,12 +328,24 @@ class ConnectFourGUI:
         self.difficulty_combo.bind('<<ComboboxSelected>>', lambda e: self.reset_game())
         self.draw_board()
 
-    def reset_game(self):
-        self.game = ConnectFourGame(self.difficulty_var.get())
-        super().reset_game()
+        # Add mode selector
+        self.mode_frame = tk.Frame(root)
+        self.mode_frame.grid(row=0, column=0, columnspan=COLUMNS, pady=5)
+
+        tk.Label(self.mode_frame, text="Mode:", font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
+        self.mode_var = tk.StringVar(value="Human vs AI")
+        self.mode_combo = ttk.Combobox(
+            self.mode_frame,
+            textvariable=self.mode_var,
+            values=["Human vs AI", "AI vs AI"],
+            state="readonly",
+            width=15
+        )
+        self.mode_combo.pack(side=tk.LEFT, padx=5)
+        self.mode_combo.bind('<<ComboboxSelected>>', lambda e: self.reset_game())
 
     def human_move(self, column):
-        if self.game.current_player != PLAYER_1:
+        if self.mode_var.get() != "Human vs AI" or self.game.current_player != PLAYER_1:
             return
 
         result = self.game.drop_piece(column)
@@ -300,7 +361,7 @@ class ConnectFourGUI:
         # AI's turn
         self.game.switch_player()
         self.update_status()
-        self.root.after(500, self.ai_move)  # Add slight delay for better UX
+        self.root.after(500, self.ai_move)
 
     def ai_move(self):
         ai_column = self.game.get_ai_move()
@@ -317,19 +378,18 @@ class ConnectFourGUI:
         has_winner, winning_positions = self.game.check_winner(self.game.current_player)
         if has_winner:
             self.animate_winner(winning_positions)
-            winner = "You win!" if self.game.current_player == PLAYER_1 else "AI wins!"
-            messagebox.showinfo("Game Over", winner)
+            winner = "You win!" if self.game.current_player == PLAYER_1 else "AI wins!"  # Display winner
+            messagebox.showinfo("Game Over", winner)  # Show the winner's name
             self.disable_buttons()
             return True
 
         if self.game.is_draw():
             self.status_label.config(text="It's a draw!")
-            messagebox.showinfo("Game Over", "It's a draw!")
+            messagebox.showinfo("Game Over", "It's a draw!")  # Show draw message
             return True
 
         return False
 
-    # [Rest of the GUI methods remain the same as in your original code]
     def draw_board(self, highlight=[]):
         self.canvas.delete("all")
         for row in range(ROWS):
@@ -349,8 +409,14 @@ class ConnectFourGUI:
                 self.canvas.create_oval(x0, y0, x1, y1, fill=color, outline=outline, width=2)
 
     def update_status(self):
-        player_text = "Your Turn (Red)" if self.game.current_player == PLAYER_1 else "AI's Turn (Yellow)"
-        self.status_label.config(text=player_text)
+        if self.game.current_player == PLAYER_1:
+            player_text = "Your Turn (Red)" if self.game.difficulty != "ai_vs_ai" else "Player 1's Turn (Red)"
+            player_color = PLAYER_COLORS[PLAYER_1]  # Red
+        else:
+            player_text = "AI's Turn (Yellow)" if self.game.difficulty != "ai_vs_ai" else "Player 2's Turn (Yellow)"
+            player_color = PLAYER_COLORS[PLAYER_2]  # Yellow
+
+        self.status_label.config(text=player_text, bg=player_color)
 
     def disable_buttons(self):
         for button in self.buttons:
@@ -358,11 +424,39 @@ class ConnectFourGUI:
 
     def reset_game(self):
         self.animation_running = False
-        self.game = ConnectFourGame()
+        self.game = ConnectFourGame(difficulty=self.difficulty_var.get())
         self.draw_board()
         self.update_status()
         for button in self.buttons:
             button.config(state=tk.NORMAL)
+
+        # Disable buttons if in AI vs AI mode
+        if self.mode_var.get() == "AI vs AI":
+            for button in self.buttons:
+                button.config(state=tk.DISABLED)
+            self.start_ai_vs_ai()
+
+    def start_ai_vs_ai(self):
+        def play_turn():
+            if self.game.is_terminal_node():
+                self.check_game_end()
+                return
+
+            current_difficulty = "easy" if self.game.current_player == PLAYER_1 else "hard"
+            self.game.difficulty = current_difficulty
+
+            ai_move = self.game.get_ai_move()
+            self.game.drop_piece(ai_move)
+            self.draw_board()
+
+            if self.check_game_end():
+                return
+
+            self.game.switch_player()
+            self.update_status()
+            self.root.after(500, play_turn)  # Add delay for better simulation effect
+
+        play_turn()
 
     def animate_winner(self, positions):
         self.animation_running = True
