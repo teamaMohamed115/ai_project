@@ -3,6 +3,8 @@ from tkinter import messagebox
 import heapq
 import time
 
+scores = {3: [], 4: [], 5: [], 6: []}  # Global dictionary to track scores
+
 # Towers of Hanoi logic using A*
 def a_star_towers_of_hanoi(num_disks):
     initial_state = (tuple(range(num_disks, 0, -1)), (), ())
@@ -56,10 +58,12 @@ def start_gui():
         solution = a_star_towers_of_hanoi(num_disks)
 
         def reset_game():
-            nonlocal start_time, state, selected_peg
+            nonlocal start_time, state, selected_peg, timer_running, history
             start_time = time.time()
             state = [list(range(num_disks, 0, -1)), [], []]
             selected_peg = None
+            timer_running = True
+            history = []
             draw_game()
             update_timer()
 
@@ -76,15 +80,15 @@ def start_gui():
 
             # Draw disks
             for peg_index, peg in enumerate(state):
-                for disk_index, disk in enumerate(peg):
+                for disk_index, disk in enumerate(reversed(peg)):
                     width = 50 + (disk - 1) * 30
                     height = 20
                     x = 100 + peg_index * 200
-                    y = 300 - (disk_index + 1) * height  # Adjust position based on the disk index
-                    canvas.create_rectangle(x - width / 2, y - height, x + width / 2, y, fill="blue", outline="black")
+                    y = 300 - (len(peg) - disk_index) * height
+                    canvas.create_rectangle(x - width / 2, y - height, x + width / 2, y, fill="blue")
 
         def on_click(event):
-            nonlocal selected_peg
+            nonlocal selected_peg, timer_running
 
             x = event.x
             peg_width = 20
@@ -93,32 +97,36 @@ def start_gui():
                 peg_x = 100 + i * 200
                 if peg_x - peg_width / 2 <= x <= peg_x + peg_width / 2:
                     if selected_peg is None:
-                        # Select the peg only if it's not empty
                         if state[i]:
                             selected_peg = i
-                            status_label.config(text=f"Selected disk from Rod {chr(65 + i)}", fg="green")
-                        else:
-                            status_label.config(text=f"Rod {chr(65 + i)} is empty! Select another rod.", fg="red")
+                            status_label.config(text=f"Selected Rod {chr(65 + i)}.", fg="blue")
                     else:
-                        # Move disk only if the target peg is empty or its top disk is larger
                         if not state[i] or state[selected_peg][-1] < state[i][-1]:
+                            history.append([list(peg) for peg in state])  # Save current state
                             state[i].append(state[selected_peg].pop())
                             draw_game()
                             status_label.config(text=f"Moved disk to Rod {chr(65 + i)}", fg="green")
+                            # if state[2] == list(range(num_disks, 0, -1)):
+                            #     elapsed_time = time.time() - start_time
+                            #     timer_running = False
+                            #     messagebox.showinfo("Congratulations!", f"You solved the puzzle in {elapsed_time:.2f} seconds!")
+                            #     best_scores[level] = min(best_scores[level], elapsed_time)
 
-                            # Check for game completion
                             if state[2] == list(range(num_disks, 0, -1)):
                                 elapsed_time = time.time() - start_time
-                                messagebox.showinfo("Congratulations!", f"You solved the puzzle in {elapsed_time:.2f} seconds!")
-                                best_scores[level] = min(best_scores[level], elapsed_time)
-                        else:
-                            status_label.config(text=f"Invalid move! You can't place a larger disk on a smaller one.", fg="red")
+                                timer_running = False
+                                num_moves = len(history)
+                                scores[level].append((elapsed_time, num_moves))  # Store time and moves
+                                messagebox.showinfo("Congratulations!", f"You solved the puzzle in {elapsed_time:.2f} seconds and {num_moves} moves!")
 
-                        # Deselect the source peg after the move
+                        else:
+                            status_label.config(text="Invalid move! Cannot place a larger disk on a smaller one.", fg="red")
                         selected_peg = None
                         return
 
         def update_timer():
+            if not timer_running:
+                return
             elapsed_time = time.time() - start_time
             if elapsed_time >= 60:
                 messagebox.showinfo("Game Over", "Time's up! Here's the solution:")
@@ -135,14 +143,35 @@ def start_gui():
             root.destroy()
             menu()
 
+        def undo_move():
+            if history:
+                nonlocal state
+                state = history.pop()
+                draw_game()
+                status_label.config(text="Undid the last move.", fg="orange")
+            else:
+                status_label.config(text="No moves to undo!", fg="red")
+
+        def show_scores():
+            if scores[level]:
+                score_text = "\n".join([f"Time: {time:.2f}s, Moves: {moves}" for time, moves in scores[level]])
+                messagebox.showinfo("Achieved Scores", f"Scores for Level {level}:\n\n{score_text}")
+            else:
+                messagebox.showinfo("Achieved Scores", "No scores recorded yet for this level.")
+
         root = tk.Tk()
         root.title(f"Towers of Hanoi - Level {level}")
 
         start_time = time.time()
         selected_peg = None
         state = [list(range(num_disks, 0, -1)), [], []]
+        timer_running = True
+        history = []
 
-        best_scores = {3: float('inf'), 4: float('inf'), 5: float('inf'), 6: float('inf')}
+        # best_scores = {3: float('inf'), 4: float('inf'), 5: float('inf'), 6: float('inf')}
+
+        status_label = tk.Label(root, text="Select a disk to move.", font=("Arial", 12), fg="blue")
+        status_label.pack()
 
         timer_label = tk.Label(root, text="Time: 0.00 s", font=("Arial", 14))
         timer_label.pack()
@@ -150,10 +179,6 @@ def start_gui():
         canvas = tk.Canvas(root, width=600, height=400, bg="white")
         canvas.pack()
         canvas.bind("<Button-1>", on_click)
-        #################
-        status_label = tk.Label(root, text="Select a disk to move.", font=("Arial", 12), fg="blue")
-        status_label.pack()
-        #################
 
         button_frame = tk.Frame(root)
         button_frame.pack()
@@ -166,6 +191,12 @@ def start_gui():
 
         back_button = tk.Button(button_frame, text="Back", command=back_to_menu)
         back_button.grid(row=0, column=2)
+
+        undo_button = tk.Button(button_frame, text="Undo", command=undo_move)
+        undo_button.grid(row=0, column=3)
+
+        scores_button = tk.Button(button_frame, text="Achieved Scores", command=show_scores)
+        scores_button.grid(row=0, column=4)
 
         draw_game()
         update_timer()
@@ -180,11 +211,11 @@ def start_gui():
         title_label.pack(pady=10)
 
         buttons = [
-            ("Level 1: Easy (3 disks)", 3),
-            ("Level 2: Medium (4 disks)", 4),
-            ("Level 3: Hard (5 disks)", 5),
-            ("Level 4: Level الوحش", 6),
-            ("Level 5: Solve and take 1 million dollar", -1),
+            ("Easy (3 disks)", 3),
+            ("Medium (4 disks)", 4),
+            ("Hard (5 disks)", 5),
+            ("Level الوحش (6 disks)", 6),
+            ("Solve and Win one million dollar 💸💲", -1),
         ]
 
         for text, level in buttons:
