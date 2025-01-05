@@ -111,7 +111,7 @@ def a_star_towers_of_hanoi(num_disks):
     closed_set = set()
 
     while open_set:
-        h, g, current_state, path = heapq.heappop(open_set)
+        total_cost, g, current_state, path = heapq.heappop(open_set)
 
         if current_state == goal_state:
             return path
