@@ -70,79 +70,6 @@ class GameManager:
         root = tk.Tk()
         MazeSolverGUI(root, self)  # Pass self reference for back functionality
 
-# class GameManager:
-#     def __init__(self):
-#         self.root = tk.Tk()
-#         self.root.title("Game Collection")
-#         self.create_main_menu()
-
-#     def create_main_menu(self):
-#         # Clear existing widgets
-#         for widget in self.root.winfo_children():
-#             widget.destroy()
-
-#         # Configure the main menu
-#         self.root.geometry("400x400")
-        
-#         # Title
-#         title_label = tk.Label(self.root, text="Game Collection", font=("Arial", 24, "bold"))
-#         title_label.pack(pady=20)
-
-#         # Game buttons
-#         games = [
-#             ("Towers of Hanoi", self.start_towers_of_hanoi),
-#             ("Connect Four", self.start_connect_four),
-#             ("Maze Solver", self.start_maze_solver)
-#         ]
-
-#         for game_name, game_func in games:
-#             button = tk.Button(
-#                 self.root,
-#                 text=game_name,
-#                 font=("Arial", 14),
-#                 width=20,
-#                 height=2,
-#                 command=game_func
-#             )
-#             button.pack(pady=10)
-
-#         # Quit button
-#         quit_button = tk.Button(
-#             self.root,
-#             text="Quit",
-#             font=("Arial", 14),
-#             width=20,
-#             height=2,
-#             command=self.root.quit
-#         )
-#         quit_button.pack(pady=20)
-
-#     def back_to_main_menu(self):
-#         # Destroy current game window
-#         self.root.destroy()
-#         # Create new root window and menu
-#         self.__init__()
-
-#     def start_towers_of_hanoi(self):
-#         # self.root.destroy()
-#         # root = tk.Tk()
-#         # start_gui(root, self)  # Pass self reference for back functionality
-            
-#         self.root.withdraw()  # Hide the main window instead of destroying it
-#         start_gui(self.root, self)  # Pass the existing root window and self
-
-#     def start_connect_four(self):
-#         self.root.destroy()
-#         root = tk.Tk()
-#         ConnectFourGUI(root, self)  # Pass self reference for back functionality
-
-#     def start_maze_solver(self):
-#         self.root.destroy()
-#         root = tk.Tk()
-#         MazeSolverGUI(root, self)  # Pass self reference for back functionality
-
-# [Original Towers of Hanoi code remains the same, except modify the start_gui function to accept game_manager parameter]
-
 scores = {3: [], 4: [], 5: [], 6: []}  # Global dictionary to track scores
 
 # Towers of Hanoi logic using A*
@@ -246,12 +173,7 @@ def start_gui(root, game_manager):
                             state[i].append(state[selected_peg].pop())
                             draw_game()
                             status_label.config(text=f"Moved disk to Rod {chr(65 + i)}", fg="green")
-                            # if state[2] == list(range(num_disks, 0, -1)):
-                            #     elapsed_time = time.time() - start_time
-                            #     timer_running = False
-                            #     messagebox.showinfo("Congratulations!", f"You solved the puzzle in {elapsed_time:.2f} seconds!")
-                            #     best_scores[level] = min(best_scores[level], elapsed_time)
-
+         
                             if state[2] == list(range(num_disks, 0, -1)):
                                 elapsed_time = time.time() - start_time
                                 timer_running = False
@@ -308,8 +230,6 @@ def start_gui(root, game_manager):
         timer_running = True
         history = []
 
-        # best_scores = {3: float('inf'), 4: float('inf'), 5: float('inf'), 6: float('inf')}
-
         status_label = tk.Label(root, text="Select a disk to move.", font=("Arial", 12), fg="blue")
         status_label.pack()
 
@@ -363,39 +283,16 @@ def start_gui(root, game_manager):
                              command=lambda l=level: [menu_root.destroy(), start_game(l)])
             button.pack(pady=5)
 
-        # Add back to main menu button
         back_button = tk.Button(menu_root, text="Back to Main Menu", font=("Arial", 14, "bold"),
                               command=lambda: [menu_root.destroy(), game_manager.back_to_main_menu()])
         back_button.pack(pady=10)
 
         menu_root.mainloop()
 
-    # [Rest of the Towers of Hanoi code remains the same]
     menu()
-
-
-
-
-
-
-
-
-
 
 #############################################################################################################################
 
-
-
-
-
-
-
-
-
-
-# [Original Connect Four code remains the same, except modify the ConnectFourGUI class to accept game_manager parameter]
-
-# Constants (existing ones remain the same)
 ROWS = 6
 COLUMNS = 7
 PLAYER_1 = "X"  # Human
@@ -673,27 +570,6 @@ class ConnectFourGame:
 class ConnectFourGUI:
 
     def __init__(self, root, game_manager):
-        # self.game_manager = game_manager
-        # self.root = root
-        # self.root.title("Connect Four vs AI")
-
-        # # Create main container frame
-        # self.main_frame = tk.Frame(root)
-        # self.main_frame.grid(row=0, column=0, sticky="nsew")
-
-        # # Create button frame with right alignment
-        # self.button_frame = tk.Frame(self.main_frame)
-        # self.button_frame.grid(row=0, column=0, columnspan=COLUMNS, sticky="e", padx=10, pady=5)
-
-        # # Modify the back button to properly return to main menu
-        # self.back_button = tk.Button(
-        #     self.button_frame,
-        #     text="Back to Main Menu",
-        #     font=("Arial", 12),
-        #     command=lambda: [self.root.withdraw(), game_manager.back_to_main_menu()]
-        # )
-        # self.back_button.pack(side="right")
-
         self.game_manager = game_manager
         self.root = root
         self.root.title("Connect Four vs AI")
@@ -711,16 +587,6 @@ class ConnectFourGUI:
             command=self.back_to_main_menu
         )
         self.back_button.pack(side="right")
-
-    # def back_to_main_menu(self):
-    #     # Destroy current game window
-    #     self.root.destroy()
-    #     # Create new root window and menu
-    #     self.__init__()
-
-        # # Add back to main menu button
-        # back_button = tk.Button(menu_root, text="Back to Main Menu", font=("Arial", 14, "bold"),
-        #                       command=lambda: [menu_root.destroy(), game_manager.back_to_main_menu()])
 
         # Difficulty selector
         self.difficulty_frame = tk.Frame(self.main_frame)
@@ -789,14 +655,6 @@ class ConnectFourGUI:
     def back_to_main_menu(self):
         self.root.destroy()
         self.game_manager.root.deiconify()
-
-    # def back_to_main_menu(self):
-    #     # Hide this window
-    #     self.root.withdraw()
-    #     # Show the main menu
-    #     self.game_manager.root.deiconify()
-    #     # Schedule the destruction of this window after showing main menu
-    #     self.root.after(100, self.root.destroy)
 
     def human_move(self, column):
         if self.mode_var.get() != "Human vs AI" or self.game.current_player != PLAYER_1:
@@ -931,54 +789,11 @@ class ConnectFourGUI:
         toggle_color()
 
 
-
-
-
-
-
-
-
-
 #############################################################################################################################
-
-
-
-
-
-
-
-
-
-
-# [Original Maze Solver code remains the same, except create a new class to handle the GUI]
 
 class MazeSolverGUI:
 
     def __init__(self, root, game_manager):
-        # self.game_manager = game_manager
-        # self.root = root
-        # self.root.title("Maze Game")
-        
-        # # Constants
-        # self.WIDTH = 600
-        # self.HEIGHT = 600
-        # self.TILE = 40
-        # self.cols = self.WIDTH // self.TILE
-        # self.rows = self.HEIGHT // self.TILE
-        
-        # # Create frame for buttons
-        # self.button_frame = tk.Frame(self.root)
-        # self.button_frame.pack(pady=5)
-        
-        # # Modified back button with proper navigation
-        # self.back_button = tk.Button(
-        #     self.button_frame,
-        #     text="Back to Main Menu",
-        #     font=("Arial", 12),
-        #     command=self.back_to_main_menu
-        # )
-        # self.back_button.pack(pady=5)
-
         self.game_manager = game_manager
         self.root = root
         self.root.title("Maze Game")
@@ -1080,10 +895,6 @@ class MazeSolverGUI:
             current.walls['bottom'] = False
             next.walls['top'] = False
 
-    # def back_to_main_menu(self):
-    #     self.root.withdraw()
-    #     self.game_manager.back_to_main_menu()
-
     def back_to_main_menu(self):
         self.root.destroy()
         self.game_manager.root.deiconify()
@@ -1147,13 +958,6 @@ class MazeSolverGUI:
             fill="blue"
         )
 
-        # # Check for victory
-        # if self.player_pos == self.goal_pos:
-        #     messagebox.showinfo("Victory!", "Congratulations! You reached the goal!")
-        #     self.root.destroy()
-        #     self.game_manager.back_to_main_menu()
-        #     return
-        
         # Check for victory
         if self.player_pos == self.goal_pos:
             messagebox.showinfo("Victory!", "Congratulations! You reached the goal!")
