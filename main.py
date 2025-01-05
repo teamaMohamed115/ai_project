@@ -74,7 +74,7 @@ scores = {3: [], 4: [], 5: [], 6: []}  # Global dictionary to track scores
 
 # Towers of Hanoi logic using A*
 def a_star_towers_of_hanoi(num_disks):
-    initial_state = (tuple(range(num_disks, 0, -1)), (), ())
+    initial_state = (tuple(range(num_disks, 0, -1)), (), ()) # ((3,2,1), (), ())
     goal_state = ((), (), tuple(range(num_disks, 0, -1)))
 
     # this heuristic function counts how many disks are misplaced
