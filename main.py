@@ -77,8 +77,17 @@ def a_star_towers_of_hanoi(num_disks):
     initial_state = (tuple(range(num_disks, 0, -1)), (), ())
     goal_state = ((), (), tuple(range(num_disks, 0, -1)))
 
+    # this heuristic function counts how many disks are misplaced
     def heuristic(state):
-        return sum(disk != peg[-1] if peg else True for peg in state for disk in peg)
+        return sum(disk != peg[-1] if peg else False for peg in state for disk in peg)
+    # add 1 to the total if the disk is not in its correct position
+    # add 0 if the peg is empty (doesn't contribute to)
+    # add 0 if the disk on the top (movable disk)
+
+    # print(heuristic(initial_state)) # 2
+    # print(heuristic(((), (2, 1), (3,)))) # 1
+    # print(heuristic(((1,), (2,), (3,)))) # 0
+    # print(heuristic(goal_state)) # 2
 
     def get_neighbors(state):
         neighbors = []
@@ -86,8 +95,12 @@ def a_star_towers_of_hanoi(num_disks):
             if state[from_peg]:
                 for to_peg in range(3):
                     if from_peg != to_peg:
+                        # to_peg is empty or top value of from_peg is less than the top value of to_peg
                         if not state[to_peg] or state[from_peg][-1] < state[to_peg][-1]:
-                            new_state = list(map(list, state))
+                            # each peg is a tuple, which is immutable. 
+                            # The algorithm needs to modify the state by moving disks between pegs, 
+                            # and to do that, it must work with mutable types (like lists).
+                            new_state = list(map(list, state)) 
                             disk = new_state[from_peg].pop()
                             new_state[to_peg].append(disk)
                             neighbors.append(tuple(map(tuple, new_state)))
@@ -98,7 +111,7 @@ def a_star_towers_of_hanoi(num_disks):
     closed_set = set()
 
     while open_set:
-        _, g, current_state, path = heapq.heappop(open_set)
+        h, g, current_state, path = heapq.heappop(open_set)
 
         if current_state == goal_state:
             return path
