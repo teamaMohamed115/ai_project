@@ -84,10 +84,10 @@ def a_star_towers_of_hanoi(num_disks):
     # add 0 if the peg is empty (doesn't contribute to)
     # add 0 if the disk on the top (movable disk)
 
-    # print(heuristic(initial_state)) # 2
-    # print(heuristic(((), (2, 1), (3,)))) # 1
-    # print(heuristic(((1,), (2,), (3,)))) # 0
-    # print(heuristic(goal_state)) # 2
+    # heuristic(initial_state) = 2
+    # heuristic(((), (2, 1), (3,))) = 1
+    # heuristic(((1,), (2,), (3,))) = 0
+    # heuristic(goal_state) = 2
 
     def get_neighbors(state):
         neighbors = []
